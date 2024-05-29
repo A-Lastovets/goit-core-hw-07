@@ -1,3 +1,4 @@
+
 from datetime import datetime, timedelta
 
 class Field:
@@ -73,14 +74,14 @@ class AddressBook(dict):
         if name in self:
             del self[name]
 
-    def get_upcoming_birthdays(self):
-        today = datetime.now().date()
+    def get_upcoming_birthdays(self, days=7):
+
+        current_date = datetime.today().date()
         upcoming_birthdays = []
         for record in self.values():
-            if record.birthday and record.birthday.value - today <= timedelta(days=7):
-                upcoming_birthdays.append(record)
-        return upcoming_birthdays
-
+            if (record.birthday.value - current_date).days <= days:
+                upcoming_birthdays.append(record.birthday.value)
+            return upcoming_birthdays
 
 def parse_input(user_input):
     cmd, *args = user_input.split()
@@ -141,13 +142,12 @@ def show_phone(args, book):
         return "Contact not found."
 
 @input_error
-def show_all(book):
+def show_all(book:AddressBook):
     records_info = "\n".join(str(record) for record in book.values())
     return records_info if records_info else "No contacts found."
 
 
-@input_error
-def add_birthday(args, book):
+def add_birthday(args, book:AddressBook):
     if len(args) < 2:
         raise ValueError("Wrong command to add birthday. Please enter command 'add-birthday' + 'name' + 'date of birthday'")
     name, birthday = args
@@ -159,8 +159,7 @@ def add_birthday(args, book):
         return "Contact not found."
 
 
-@input_error
-def show_birthday(args, book):
+def show_birthday(args, book:AddressBook):
     if len(args) < 1:
         raise ValueError("Wrong command to show birthday. Please enter command 'show-birthday' and 'name'")
     name = args[0]
@@ -174,11 +173,10 @@ def show_birthday(args, book):
         return "Contact not found."
 
 
-@input_error
-def birthdays(book):
+def birthdays(book:AddressBook):
     upcoming_birthdays = book.get_upcoming_birthdays()
     if upcoming_birthdays:
-        return "\n".join(str(record) for record in upcoming_birthdays)
+        return "Upcoming birthdays: " + "".join(str(record) for record in upcoming_birthdays)
     else:
         return "No upcoming birthdays."
 
