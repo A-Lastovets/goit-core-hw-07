@@ -1,5 +1,6 @@
 
 from datetime import datetime, timedelta
+from collections import Counter
 
 class Field:
     def __init__(self, value):
@@ -75,13 +76,24 @@ class AddressBook(dict):
             del self[name]
 
     def get_upcoming_birthdays(self, days=7):
-
         current_date = datetime.today().date()
         upcoming_birthdays = []
         for record in self.values():
-            if (record.birthday.value - current_date).days <= days:
-                upcoming_birthdays.append(record.birthday.value)
-            return upcoming_birthdays
+            if record.birthday:
+                birthday_date = record.birthday.value
+                birthday_this_year = birthday_date.replace(year=current_date.year)
+            if birthday_this_year < current_date:
+                birthday_this_year = birthday_this_year.replace(year=current_date.year + 1)
+            days_difference = (birthday_this_year - current_date).days
+            if 0 <= days_difference <= days:
+                adjusted_birthday = adjust_for_weekend(birthday_this_year)
+                upcoming_birthdays.append(
+                    {
+                    'name': record.name.value.title(),
+                    'congratulation_date': str(adjusted_birthday)
+                    }
+                    )
+        return upcoming_birthdays
 
 def parse_input(user_input):
     cmd, *args = user_input.split()
@@ -146,7 +158,7 @@ def show_all(book:AddressBook):
     records_info = "\n".join(str(record) for record in book.values())
     return records_info if records_info else "No contacts found."
 
-
+@input_error
 def add_birthday(args, book:AddressBook):
     if len(args) < 2:
         raise ValueError("Wrong command to add birthday. Please enter command 'add-birthday' + 'name' + 'date of birthday'")
@@ -158,7 +170,7 @@ def add_birthday(args, book:AddressBook):
     else:
         return "Contact not found."
 
-
+@input_error
 def show_birthday(args, book:AddressBook):
     if len(args) < 1:
         raise ValueError("Wrong command to show birthday. Please enter command 'show-birthday' and 'name'")
@@ -172,11 +184,18 @@ def show_birthday(args, book:AddressBook):
     else:
         return "Contact not found."
 
-
+def adjust_for_weekend(date):
+    weekday = date.weekday()
+    if weekday == 5:  # якщо др випадає на суботу
+        return date + timedelta(days=2)
+    elif weekday == 6:  # якщо др випадає на неділю
+        return date + timedelta(days=1)
+    return date
+    
 def birthdays(book:AddressBook):
     upcoming_birthdays = book.get_upcoming_birthdays()
     if upcoming_birthdays:
-        return "Upcoming birthdays: " + "".join(str(record) for record in upcoming_birthdays)
+        return "Upcoming birthdays: \n" + "\n".join(str(record) for record in upcoming_birthdays).replace('{', '').replace('}', '').replace("'", "")
     else:
         return "No upcoming birthdays."
 
